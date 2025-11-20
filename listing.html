@@ -540,6 +540,65 @@
         summary.scrollIntoView({behavior:'smooth'});
       });
     })();
+    <script>
+const GOOGLE_SHEETS_WEBAPP_URL = "https://script.google.com/macros/s/AKfycbwSUK6NAu_jDPopwvwMu_P7MVS6deV9wCjWh4GMXAxQy2wDZZkMw99uvAB0MPBRg3FfBw/exec";
+
+// Override submit behavior to send data to Google Sheets
+document.getElementById("propertyListingForm").addEventListener("submit", async function(e){
+    e.preventDefault();
+
+    const fd = new FormData(this);
+    const dataObj = {};
+
+    // Convert form data into JSON
+    fd.forEach((value, key) => {
+        if (key.endsWith("[]")) {
+            if (!dataObj[key]) dataObj[key] = [];
+            dataObj[key].push(value);
+        } else {
+            dataObj[key] = value;
+        }
+    });
+
+    // Post to Google Sheets
+    try {
+        await fetch(GOOGLE_SHEETS_WEBAPP_URL, {
+            method: "POST",
+            mode: "no-cors",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(dataObj)
+        });
+
+        console.log("Data saved to Google Sheet.");
+    } catch (err) {
+        console.error("Error saving to Google Sheets:", err);
+    }
+
+    // Continue showing summary (existing behavior)
+    const summary = document.getElementById('submissionSummary');
+    const form = document.getElementById('propertyListingForm');
+    const summaryContent = document.getElementById('summaryContent');
+
+    function escapeHtml(str){
+      return String(str).replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;', "'":'&#39;'}[m]);
+    }
+
+    let html = '<div class="summary-grid">';
+    Object.entries(dataObj).forEach(([k,v])=>{
+        const label = k.replace(/\[\]/,'').replace(/([A-Z])/g,' $1');
+        const val = Array.isArray(v) ? v.join(", ") : v;
+        html += `<div class="summary-row"><div class="summary-label">${label}</div><div class="summary-val">${escapeHtml(val)}</div></div>`;
+    });
+    html += '</div>';
+
+    summaryContent.innerHTML = html;
+
+    form.style.display = 'none';
+    summary.style.display = 'block';
+    summary.scrollIntoView({behavior:'smooth'});
+});
+</script>
+
   </script>
 </body>
 </html>
